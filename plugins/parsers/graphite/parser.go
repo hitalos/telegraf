@@ -147,6 +147,26 @@ func (p *GraphiteParser) ParseLine(line string) (telegraf.Metric, error) {
 			}
 		}
 	}
+
+	// Split name and tags
+	parts := strings.Split(measurement, ";")
+	if len(parts) > 2 {
+		measurement = parts[0]
+		for _, tag := range parts[1:] {
+			tagValue := strings.Split(tag, "=")
+			if len(tagValue) != 2 || len(tagValue[0]) == 0 || len(tagValue[1]) == 0 {
+				continue
+			}
+			if strings.IndexAny(tagValue[0], "!^") != -1 {
+				continue
+			}
+			if strings.Index(tagValue[1], "~") == 0 {
+				continue
+			}
+			tags[tagValue[0]] = tagValue[1]
+		}
+	}
+
 	// Set the default tags on the point if they are not already set
 	for k, v := range p.DefaultTags {
 		if _, ok := tags[k]; !ok {
